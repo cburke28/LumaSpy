@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LumaSpy — Beauty & Wellness Ad Intelligence</title>
+  <meta name="description" content="See every ad your beauty competitors are running. AI analyzes competitor Facebook ads and tells you exactly why they work — then writes your version in one click." />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* Landing-only extras */
+    .glow-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .hero { position: relative; }
+    .hero > * { position: relative; z-index: 1; }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="landing-nav">
+  <div class="logo">Luma<span>Spy</span></div>
+  <div style="display:flex;gap:12px;align-items:center;">
+    <button class="btn btn-outline btn-sm" onclick="openModal('login')">Log in</button>
+    <button class="btn btn-primary btn-sm" onclick="openModal('free')">Start Free →</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-eyebrow">
+    ✦ Beauty &amp; Wellness Ad Intelligence
+  </div>
+
+  <h1>
+    See Every Ad Your<br/>
+    <span class="gradient-text">Beauty Competitors</span><br/>
+    Are Running. Updated Daily.
+  </h1>
+
+  <p class="hero-sub">
+    AI analyzes competitor Facebook ads and tells you exactly
+    why they work — then writes your version in one click.
+  </p>
+
+  <div class="hero-cta">
+    <button class="btn btn-primary btn-lg" onclick="openModal('free')">
+      Start for Free →
+    </button>
+    <button class="btn btn-outline btn-lg" onclick="scrollTo({top: document.getElementById('pricing').offsetTop, behavior:'smooth'})">
+      See Pricing
+    </button>
+  </div>
+
+  <div class="hero-social-proof">
+    <div class="proof-item">
+      <div class="proof-num">50K+</div>
+      <div class="proof-label">Ads Tracked</div>
+    </div>
+    <div class="proof-item">
+      <div class="proof-num">1,200+</div>
+      <div class="proof-label">Beauty Brands</div>
+    </div>
+    <div class="proof-item">
+      <div class="proof-num">Daily</div>
+      <div class="proof-label">Updates</div>
+    </div>
+    <div class="proof-item">
+      <div class="proof-num">AI</div>
+      <div class="proof-label">Powered Analysis</div>
+    </div>
+  </div>
+</section>
+
+<!-- BENEFITS -->
+<section class="benefits">
+  <p class="section-label">Why LumaSpy</p>
+  <h2 class="section-title">Your Unfair Advantage<br/>in the Beauty Space</h2>
+
+  <div class="benefits-grid">
+    <div class="benefit-card">
+      <div class="benefit-icon">🔍</div>
+      <h3>Track Unlimited Beauty Brands</h3>
+      <p>Monitor every Facebook ad from any competitor — skincare, haircare, supplements, wellness. New ads appear within 24 hours of launch.</p>
+    </div>
+
+    <div class="benefit-card">
+      <div class="benefit-icon">🤖</div>
+      <h3>AI Scores Every Ad 1–10 With Full Breakdown</h3>
+      <p>Claude analyzes hook type, creative strategy, key messages, and psychological triggers — then scores each ad on competitive strength.</p>
+    </div>
+
+    <div class="benefit-card">
+      <div class="benefit-icon">✍️</div>
+      <h3>Get 3 Ready-to-Launch Ad Variants Generated Instantly</h3>
+      <p>See a winning competitor ad? One click generates 3 fresh variants rewritten for your brand voice. Copy, paste, launch.</p>
+    </div>
+
+    <div class="benefit-card">
+      <div class="benefit-icon">📊</div>
+      <h3>See What's Working Right Now</h3>
+      <p>Filter by days running, AI score, or brand. Ads running 30+ days are likely profitable — spy on what's converting before you spend a dollar.</p>
+    </div>
+
+    <div class="benefit-card">
+      <div class="benefit-icon">📧</div>
+      <h3>Weekly Intelligence Digest</h3>
+      <p>Pro subscribers get a curated weekly email with top-performing ads, trends across their tracked brands, and new entrants to watch.</p>
+    </div>
+
+    <div class="benefit-card">
+      <div class="benefit-icon">⚡</div>
+      <h3>Built for Speed</h3>
+      <p>Add a brand, see their active ads in minutes. No complicated setups, no API keys to manage. Just paste the Facebook page name and go.</p>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing" id="pricing">
+  <p class="section-label">Pricing</p>
+  <h2 class="section-title">Start Free.<br/>Go Pro When You're Ready.</h2>
+
+  <div class="pricing-grid">
+    <!-- FREE -->
+    <div class="pricing-card">
+      <p class="plan-name">Free</p>
+      <p class="plan-price">$0</p>
+      <p class="plan-desc">Perfect for testing the waters</p>
+
+      <ul class="plan-features">
+        <li><span class="check">✓</span> Track 1 competitor brand</li>
+        <li><span class="check">✓</span> See last 7 days of ads</li>
+        <li><span class="check">✓</span> Up to 10 ads visible</li>
+        <li><span class="check-dim">—</span> <span style="color:var(--muted2)">AI analysis &amp; scoring</span></li>
+        <li><span class="check-dim">—</span> <span style="color:var(--muted2)">Copy generation</span></li>
+        <li><span class="check-dim">—</span> <span style="color:var(--muted2)">Weekly digest email</span></li>
+      </ul>
+
+      <button class="btn btn-outline" style="width:100%;" onclick="openModal('free')">
+        Start Free →
+      </button>
+    </div>
+
+    <!-- PRO -->
+    <div class="pricing-card featured">
+      <p class="plan-name">Pro</p>
+      <p class="plan-price">$49<span>/mo</span></p>
+      <p class="plan-desc">7-day free trial, cancel anytime</p>
+
+      <ul class="plan-features">
+        <li><span class="check">✓</span> <strong>Unlimited competitor brands</strong></li>
+        <li><span class="check">✓</span> Full ad history</li>
+        <li><span class="check">✓</span> Unlimited ads</li>
+        <li><span class="check">✓</span> <strong>AI analysis + 1–10 scoring</strong></li>
+        <li><span class="check">✓</span> <strong>3 copy variants per ad</strong></li>
+        <li><span class="check">✓</span> Weekly digest email</li>
+      </ul>
+
+      <button class="btn btn-primary" style="width:100%;" onclick="openModal('pro')">
+        Start 7-Day Trial →
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="logo" style="font-size:18px;">Luma<span>Spy</span></div>
+  <div class="footer-links">
+    <a href="#">Privacy</a>
+    <a href="#">Terms</a>
+    <a href="mailto:hello@lumaspy.ai">Contact</a>
+  </div>
+  <p style="color:var(--muted2);font-size:12px;">© 2026 LumaSpy. All rights reserved.</p>
+</footer>
+
+<!-- EMAIL CAPTURE MODAL -->
+<div class="modal-overlay" id="modal" onclick="closeModalOutside(event)">
+  <div class="modal" style="position:relative;">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <h2 id="modal-title">Start for Free</h2>
+    <p id="modal-desc">Enter your email to create your free account and start tracking beauty competitor ads.</p>
+
+    <form id="signup-form" onsubmit="handleSignup(event)">
+      <div class="form-group">
+        <label for="email-input">Email address</label>
+        <input type="email" id="email-input" placeholder="you@brand.com" required autocomplete="email" />
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;" id="signup-btn">
+        Continue →
+      </button>
+    </form>
+    <p style="font-size:12px;color:var(--muted);text-align:center;margin-top:12px;">
+      No credit card required for free plan.
+    </p>
+  </div>
+</div>
+
+<div class="toast-container" id="toasts"></div>
+
+<script>
+  let currentPlan = 'free';
+
+  function openModal(plan) {
+    currentPlan = plan;
+    const modal = document.getElementById('modal');
+    const title = document.getElementById('modal-title');
+    const desc  = document.getElementById('modal-desc');
+    const btn   = document.getElementById('signup-btn');
+
+    if (plan === 'login') {
+      title.textContent = 'Welcome back';
+      desc.textContent  = 'Enter your email to access your dashboard.';
+      btn.textContent   = 'Go to Dashboard →';
+    } else if (plan === 'pro') {
+      title.textContent = 'Start Your 7-Day Pro Trial';
+      desc.textContent  = 'Enter your email, then you\'ll be taken to checkout. No charge for 7 days.';
+      btn.textContent   = 'Continue to Checkout →';
+    } else {
+      title.textContent = 'Start for Free';
+      desc.textContent  = 'Enter your email to create your free account.';
+      btn.textContent   = 'Create Free Account →';
+    }
+
+    modal.classList.add('open');
+    document.getElementById('email-input').focus();
+  }
+
+  function closeModal() {
+    document.getElementById('modal').classList.remove('open');
+  }
+
+  function closeModalOutside(e) {
+    if (e.target.id === 'modal') closeModal();
+  }
+
+  async function handleSignup(e) {
+    e.preventDefault();
+    const email = document.getElementById('email-input').value.trim();
+    const btn   = document.getElementById('signup-btn');
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Please wait…';
+
+    try {
+      if (currentPlan === 'login') {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Account not found');
+        localStorage.setItem('ls_subscriber', JSON.stringify(data.subscriber));
+        window.location.href = '/dashboard.html';
+        return;
+      }
+
+      // Register
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      localStorage.setItem('ls_subscriber', JSON.stringify(data.subscriber));
+
+      if (currentPlan === 'pro') {
+        const chk = await fetch('/api/create-checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const chkData = await chk.json();
+        if (chkData.url) { window.location.href = chkData.url; return; }
+      }
+
+      window.location.href = '/dashboard.html';
+    } catch (err) {
+      showToast(err.message, 'error');
+      btn.disabled = false;
+      btn.textContent = 'Continue →';
+    }
+  }
+
+  function showToast(msg, type = 'success') {
+    const c = document.getElementById('toasts');
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.textContent = msg;
+    c.appendChild(t);
+    setTimeout(() => t.remove(), 4000);
+  }
+
+  // Check for cancelled query param
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('cancelled')) showToast('Checkout cancelled — your free account is still active.', 'error');
+</script>
+</body>
+</html>

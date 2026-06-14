@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LumaSpy — Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div class="dash-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">Luma<span>Spy</span></div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Tracked Brands</div>
+      <div id="brands-list">
+        <div class="skeleton" style="height:40px;margin:4px 8px;border-radius:8px;"></div>
+        <div class="skeleton" style="height:40px;margin:4px 8px;border-radius:8px;"></div>
+      </div>
+    </div>
+
+    <button class="add-brand-btn" id="add-brand-btn" onclick="openAddBrand()">
+      + Add Brand
+    </button>
+
+    <div style="flex:1;"></div>
+
+    <div style="padding:16px;border-top:1px solid var(--border);">
+      <a href="/" style="color:var(--muted);font-size:13px;display:flex;align-items:center;gap:6px;">
+        ← Back to site
+      </a>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="dash-main">
+
+    <!-- TOP BAR -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <h2 id="topbar-title">Ad Feed</h2>
+        <p id="topbar-sub">Select a brand to see their active ads</p>
+      </div>
+      <div class="topbar-right">
+        <span class="user-email" id="user-email">—</span>
+        <span class="badge" id="plan-badge">free</span>
+        <button class="btn btn-sm btn-ghost" id="refresh-btn" onclick="refreshCurrentBrand()" style="display:none;">
+          ↻ Refresh
+        </button>
+        <button class="btn btn-sm btn-primary" id="upgrade-btn" onclick="startUpgrade()" style="display:none;">
+          Upgrade to Pro →
+        </button>
+      </div>
+    </div>
+
+    <!-- AD FEED -->
+    <div class="ad-feed" id="ad-feed">
+      <div class="empty-state">
+        <div class="empty-state-icon">🔍</div>
+        <h3>Add your first brand to track</h3>
+        <p>Click "Add Brand" in the sidebar to start monitoring a competitor's Facebook ads.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ADD BRAND MODAL -->
+<div class="modal-overlay" id="add-brand-modal" onclick="closeAddBrandOutside(event)">
+  <div class="modal" style="position:relative;">
+    <button class="modal-close" onclick="closeAddBrand()">×</button>
+    <h2>Track a New Brand</h2>
+    <p>Enter the brand's Facebook page name exactly as it appears in the URL (e.g. <code style="color:var(--accent)">glossier</code>).</p>
+
+    <form id="add-brand-form" onsubmit="handleAddBrand(event)">
+      <div class="form-group">
+        <label>Brand Name</label>
+        <input type="text" id="brand-name-input" placeholder="e.g. Glossier" required />
+      </div>
+      <div class="form-group">
+        <label>Facebook Page Name</label>
+        <input type="text" id="fb-page-input" placeholder="e.g. glossier" required />
+      </div>
+      <div class="form-group">
+        <label>Industry</label>
+        <select id="industry-input">
+          <option value="skincare">Skincare</option>
+          <option value="haircare">Haircare</option>
+          <option value="makeup">Makeup / Color</option>
+          <option value="supplements">Supplements / Wellness</option>
+          <option value="fragrance">Fragrance / Body</option>
+          <option value="beauty">Beauty (General)</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;" id="add-brand-submit">
+        Add Brand + Start Scraping →
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- ANALYSIS DETAIL MODAL -->
+<div class="modal-overlay" id="analysis-modal" onclick="closeAnalysisOutside(event)">
+  <div class="modal" style="position:relative;max-width:680px;max-height:85vh;overflow-y:auto;">
+    <button class="modal-close" onclick="closeAnalysis()">×</button>
+    <div id="analysis-modal-content">
+      <div style="text-align:center;padding:40px;">
+        <div class="spinner" style="margin:0 auto 16px;"></div>
+        <p style="color:var(--muted);">Analyzing ad with Claude AI…</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- COPY VARIANTS MODAL -->
+<div class="modal-overlay" id="copy-modal" onclick="closeCopyOutside(event)">
+  <div class="modal" style="position:relative;max-width:600px;max-height:85vh;overflow-y:auto;">
+    <button class="modal-close" onclick="closeCopy()">×</button>
+    <h2 style="margin-bottom:8px;">Your Ad Variants</h2>
+    <p style="color:var(--muted);font-size:14px;margin-bottom:20px;">3 versions rewritten for your brand. Copy and launch.</p>
+    <div id="copy-modal-content"></div>
+  </div>
+</div>
+
+<div class="toast-container" id="toasts"></div>
+
+<script src="dashboard.js"></script>
+</body>
+</html>
