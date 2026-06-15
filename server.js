@@ -22,7 +22,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Rate limiting
-const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, standardHeaders: true });
+const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, standardHeaders: true, validate: { xForwardedForHeader: false } });
 app.use('/api', apiLimiter);
 
 // Routes
