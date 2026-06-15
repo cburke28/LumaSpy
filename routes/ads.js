@@ -62,8 +62,13 @@ router.post('/scrape', async (req, res) => {
 });
 
 async function runScrapeAndStore(brand, subscriber_id) {
-  // Search by brand name — the Ad Library API uses keyword search, not page URLs
+  console.log(`[Store] Starting store for brand: ${brand.brand_name}`);
   const rawAds = await scrapeAds(brand.brand_name);
+  console.log(`[Store] Got ${rawAds.length} ads to store`);
+
+  let inserted = 0;
+  let updated = 0;
+  let errors = 0;
 
   for (const ad of rawAds) {
     const { data: existing } = await supabase
@@ -78,15 +83,25 @@ async function runScrapeAndStore(brand, subscriber_id) {
         .from('ads')
         .update({ last_seen: new Date().toISOString(), still_active: true })
         .eq('id', existing.id);
+      updated++;
       continue;
     }
 
-    await supabase.from('ads').insert({
+    const { error } = await supabase.from('ads').insert({
       ...ad,
       brand_id: brand.id,
       subscriber_id
     });
+
+    if (error) {
+      console.error(`[Store] Insert error for ad ${ad.ad_id}:`, error.message);
+      errors++;
+    } else {
+      inserted++;
+    }
   }
+
+  console.log(`[Store] Done — inserted: ${inserted}, updated: ${updated}, errors: ${errors}`);
 }
 
 // Get single ad with analysis
