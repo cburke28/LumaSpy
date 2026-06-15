@@ -152,17 +152,53 @@ async function handleAddBrand(e) {
   renderBrandsList();
   selectBrand(data.brand.id);
 
-  // Kick off async scrape
-  fetch('/api/ads/scrape', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ subscriber_id: subscriber.id, brand_id: data.brand.id })
-  });
-
-  showToast(`Tracking ${data.brand.brand_name}! Scraping ads in background… refresh in ~2 min.`);
+  // Kick off scrape and poll for completion
+  showToast(`Tracking ${data.brand.brand_name}! Scraping ads now — takes ~2 min…`);
+  startScrapeAndPoll(data.brand.id);
   btn.disabled = false;
   btn.textContent = 'Add Brand + Start Scraping →';
   document.getElementById('add-brand-form').reset();
+}
+
+/* ─── Scrape + Poll ──────────────────────────────────────────── */
+async function startScrapeAndPoll(brandId) {
+  // Step 1: start the scrape
+  const res = await fetch('/api/ads/scrape', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ subscriber_id: subscriber.id, brand_id: brandId })
+  });
+  const data = await res.json();
+  if (!res.ok || !data.runId) {
+    showToast('Scrape could not start: ' + (data.error || 'unknown error'), 'error');
+    return;
+  }
+
+  const { runId, datasetId } = data;
+
+  // Step 2: poll every 15s until complete
+  let attempts = 0;
+  const poll = setInterval(async () => {
+    attempts++;
+    if (attempts > 20) {
+      clearInterval(poll);
+      showToast('Scrape timed out — try refreshing later.', 'error');
+      return;
+    }
+
+    const completeRes = await fetch('/api/ads/scrape/complete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subscriber_id: subscriber.id, brand_id: brandId, run_id: runId, dataset_id: datasetId })
+    });
+    const completeData = await completeRes.json();
+
+    if (completeData.status === 'SUCCEEDED') {
+      clearInterval(poll);
+      showToast(`✅ ${completeData.stored} ads saved! Loading feed…`);
+      if (currentBrandId === brandId) loadAds(brandId);
+    }
+  }, 15000);
 }
 
 /* ─── Ads ────────────────────────────────────────────────────── */

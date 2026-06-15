@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const supabase = require('../services/supabase');
-const { scrapeAds } = require('../services/apify');
+const { startScrape, fetchResults } = require('../services/apify');
 const { analyzeAd, generateCopyVariants } = require('../services/claude');
 
 // Get ads for a subscriber (optionally filtered by brand)
@@ -9,7 +9,6 @@ router.get('/', async (req, res) => {
   const { subscriber_id, brand_id, limit = 50 } = req.query;
   if (!subscriber_id) return res.status(400).json({ error: 'subscriber_id required' });
 
-  // Check free plan limits
   const { data: sub } = await supabase
     .from('subscribers')
     .select('plan')
@@ -37,7 +36,7 @@ router.get('/', async (req, res) => {
   res.json({ ads: data });
 });
 
-// Trigger a fresh scrape for a brand
+// Step 1: Start a scrape and return the run ID immediately
 router.post('/scrape', async (req, res) => {
   const { subscriber_id, brand_id } = req.body;
   if (!subscriber_id || !brand_id) {
@@ -53,24 +52,46 @@ router.post('/scrape', async (req, res) => {
 
   if (!brand) return res.status(404).json({ error: 'Brand not found' });
 
-  res.json({ message: 'Scrape started', brand: brand.brand_name });
+  console.log(`[Scrape] Starting scrape for ${brand.brand_name}`);
+  const { runId, datasetId } = await startScrape(brand.brand_name);
+  console.log(`[Scrape] Run started: ${runId}`);
 
-  // Run scrape async (don't block the response)
-  runScrapeAndStore(brand, subscriber_id).catch(err => {
-    console.error('Scrape failed:', err.message);
-  });
+  // Save run info to brand so we can poll it later
+  await supabase
+    .from('tracked_brands')
+    .update({ last_scrape_run_id: runId, last_scrape_dataset_id: datasetId })
+    .eq('id', brand_id);
+
+  res.json({ message: 'Scrape started', runId, datasetId, brand: brand.brand_name });
 });
 
-async function runScrapeAndStore(brand, subscriber_id) {
-  console.log(`[Store] Starting store for brand: ${brand.brand_name}`);
-  const rawAds = await scrapeAds(brand.brand_name);
-  console.log(`[Store] Got ${rawAds.length} ads to store`);
+// Step 2: Poll run status and store results when done
+router.post('/scrape/complete', async (req, res) => {
+  const { subscriber_id, brand_id, run_id, dataset_id } = req.body;
+  if (!subscriber_id || !brand_id || !run_id || !dataset_id) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  const { data: brand } = await supabase
+    .from('tracked_brands')
+    .select('*')
+    .eq('id', brand_id)
+    .eq('subscriber_id', subscriber_id)
+    .single();
+
+  if (!brand) return res.status(404).json({ error: 'Brand not found' });
+
+  const { status, ads } = await fetchResults(run_id, dataset_id);
+  console.log(`[Complete] Run ${run_id} status: ${status}, ads: ${ads.length}`);
+
+  if (status !== 'SUCCEEDED') {
+    return res.json({ status, stored: 0 });
+  }
 
   let inserted = 0;
-  let updated = 0;
   let errors = 0;
 
-  for (const ad of rawAds) {
+  for (const ad of ads) {
     const { data: existing } = await supabase
       .from('ads')
       .select('id')
@@ -83,7 +104,6 @@ async function runScrapeAndStore(brand, subscriber_id) {
         .from('ads')
         .update({ last_seen: new Date().toISOString(), still_active: true })
         .eq('id', existing.id);
-      updated++;
       continue;
     }
 
@@ -94,15 +114,16 @@ async function runScrapeAndStore(brand, subscriber_id) {
     });
 
     if (error) {
-      console.error(`[Store] Insert error for ad ${ad.ad_id}:`, error.message);
+      console.error(`[Complete] Insert error:`, error.message);
       errors++;
     } else {
       inserted++;
     }
   }
 
-  console.log(`[Store] Done — inserted: ${inserted}, updated: ${updated}, errors: ${errors}`);
-}
+  console.log(`[Complete] Stored ${inserted} ads, ${errors} errors`);
+  res.json({ status: 'SUCCEEDED', stored: inserted, errors });
+});
 
 // Get single ad with analysis
 router.get('/:id', async (req, res) => {
@@ -138,7 +159,6 @@ router.post('/:id/analyze', async (req, res) => {
 
   if (!ad) return res.status(404).json({ error: 'Ad not found' });
 
-  // Check if already analyzed
   const { data: existing } = await supabase
     .from('ad_analysis')
     .select('*')
