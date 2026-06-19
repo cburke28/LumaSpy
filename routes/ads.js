@@ -26,7 +26,7 @@ router.get('/', async (req, res) => {
   if (sub?.plan === 'free') {
     query = query
       .gte('first_seen', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
-      .limit(10);
+      .limit(5);
   } else {
     query = query.limit(Number(limit));
   }

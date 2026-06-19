@@ -218,18 +218,25 @@ async function loadAds(brandId) {
     return;
   }
 
+  const isPro = subscriber.plan === 'pro';
+
   // Show upgrade bar for free users
   let upgradeHtml = '';
-  if (subscriber.plan === 'free') {
+  if (!isPro) {
     upgradeHtml = `
       <div class="upgrade-bar">
-        <p>You're on the <strong>Free plan</strong> — seeing last 7 days, max 10 ads.
+        <p>👀 You're seeing <strong>5 of ${ads.length}+ ads</strong> found for this brand.
            Upgrade to unlock full history, AI scores &amp; copy generation.</p>
         <button class="btn btn-primary btn-sm" onclick="startUpgrade()">Upgrade to Pro →</button>
       </div>`;
   }
 
-  feed.innerHTML = upgradeHtml + ads.map(ad => renderAdCard(ad)).join('');
+  const adCards = ads.map(ad => renderAdCard(ad)).join('');
+
+  // Teaser section for free users
+  const teaserHtml = !isPro ? renderTeaserSection() : '';
+
+  feed.innerHTML = upgradeHtml + adCards + teaserHtml;
 }
 
 function refreshCurrentBrand() {
@@ -255,11 +262,17 @@ function renderAdCard(ad) {
        </div>`
     : '';
 
+  const fbLink = ad.link
+    ? `<a href="${esc(ad.link)}" target="_blank" class="btn btn-ghost btn-sm">👁 View Ad →</a>`
+    : '';
+
   const actionButtons = isPro
-    ? `<button class="btn btn-ghost btn-sm" onclick="showAnalysis('${ad.id}')">🤖 See Analysis</button>
+    ? `${fbLink}
+       <button class="btn btn-ghost btn-sm" onclick="showAnalysis('${ad.id}')">🤖 See Analysis</button>
        <button class="btn btn-outline btn-sm" onclick="generateCopy('${ad.id}')">✍️ Generate My Version</button>`
-    : `<button class="btn btn-ghost btn-sm" onclick="startUpgrade()" title="Pro feature">🔒 AI Analysis (Pro)</button>
-       <button class="btn btn-outline btn-sm" onclick="startUpgrade()" title="Pro feature">🔒 Generate Copy (Pro)</button>`;
+    : `${fbLink}
+       <button class="btn btn-ghost btn-sm" onclick="startUpgrade()" title="Pro feature">🔒 AI Score & Analysis</button>
+       <button class="btn btn-outline btn-sm" onclick="startUpgrade()" title="Pro feature">🔒 Generate My Version</button>`;
 
   return `
     <div class="ad-card" id="adcard-${ad.id}">
@@ -278,6 +291,63 @@ function renderAdCard(ad) {
         </div>
       </div>
       <div class="analysis-panel" id="panel-${ad.id}"></div>
+    </div>`;
+}
+
+/* ─── Pro Teaser ─────────────────────────────────────────────── */
+function renderTeaserSection() {
+  const fakeAds = [
+    { score: 9, days: 47, text: 'The serum dermatologists are calling a breakthrough...' },
+    { score: 8, days: 31, text: 'Finally — a moisturizer that works in 60 seconds flat.' },
+    { score: 7, days: 22, text: 'Your skin called. It wants this.' },
+  ];
+
+  const fakeCards = fakeAds.map(a => `
+    <div style="position:relative;filter:blur(3px);pointer-events:none;opacity:0.5;">
+      <div class="ad-card">
+        <div class="ad-card-inner">
+          <div class="ad-content" style="padding:20px;">
+            <div class="ad-meta">
+              <span class="brand-tag">Competitor Brand</span>
+              <span class="badge score-high">${a.score}/10</span>
+              <span class="days-badge">${a.days}d running</span>
+              <span class="badge badge-active">Active</span>
+            </div>
+            <p class="ad-text">${a.text}</p>
+            <div class="ad-actions">
+              <button class="btn btn-ghost btn-sm">🤖 See Analysis</button>
+              <button class="btn btn-outline btn-sm">✍️ Generate My Version</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`).join('');
+
+  return `
+    <div style="position:relative;margin-top:8px;">
+      ${fakeCards}
+      <div style="
+        position:absolute;inset:0;
+        display:flex;flex-direction:column;
+        align-items:center;justify-content:center;
+        background:linear-gradient(to bottom, rgba(10,10,10,0) 0%, rgba(10,10,10,0.97) 40%);
+        border-radius:20px;
+        padding:40px 24px;
+        text-align:center;
+      ">
+        <div style="font-size:36px;margin-bottom:12px;">🔒</div>
+        <h3 style="font-size:22px;font-weight:800;margin-bottom:8px;">
+          You're missing <span style="color:#FF3CAC;">dozens more ads</span>
+        </h3>
+        <p style="color:var(--muted);font-size:15px;max-width:400px;margin-bottom:24px;line-height:1.6;">
+          Pro members see <strong style="color:white;">every ad</strong> this brand is running —
+          with AI scores, full breakdowns, and instant copy generation.
+        </p>
+        <button class="btn btn-primary btn-lg" onclick="startUpgrade()">
+          Unlock Everything — $49/mo →
+        </button>
+        <p style="color:var(--muted2);font-size:12px;margin-top:12px;">7-day free trial · Cancel anytime</p>
+      </div>
     </div>`;
 }
 
