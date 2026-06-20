@@ -162,43 +162,71 @@ async function handleAddBrand(e) {
 
 /* ─── Scrape + Poll ──────────────────────────────────────────── */
 async function startScrapeAndPoll(brandId) {
-  // Step 1: start the scrape
-  const res = await fetch('/api/ads/scrape', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ subscriber_id: subscriber.id, brand_id: brandId })
-  });
-  const data = await res.json();
-  if (!res.ok || !data.runId) {
-    showToast('Scrape could not start: ' + (data.error || 'unknown error'), 'error');
+  // Step 1: tell server to start the scrape — server returns runId immediately
+  let scrapeData;
+  try {
+    const res = await fetch('/api/ads/scrape', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subscriber_id: subscriber.id, brand_id: brandId })
+    });
+    scrapeData = await res.json();
+    if (!res.ok || !scrapeData.runId) {
+      showToast('Could not start scrape: ' + (scrapeData.error || 'unknown'), 'error');
+      return;
+    }
+  } catch (err) {
+    showToast('Server error starting scrape — please try again.', 'error');
     return;
   }
 
-  const { runId, datasetId } = data;
+  const { runId, datasetId, apifyToken } = scrapeData;
+  showToast('🔍 Scraping ads… takes about 30-60 seconds');
 
-  // Step 2: poll every 15s until complete
+  // Step 2: browser polls Apify directly every 10s — no server needed
   let attempts = 0;
   const poll = setInterval(async () => {
     attempts++;
-    if (attempts > 20) {
+    if (attempts > 30) {
       clearInterval(poll);
-      showToast('Scrape timed out — try refreshing later.', 'error');
+      showToast('Scrape timed out — try again.', 'error');
       return;
     }
 
-    const completeRes = await fetch('/api/ads/scrape/complete', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ subscriber_id: subscriber.id, brand_id: brandId, run_id: runId, dataset_id: datasetId })
-    });
-    const completeData = await completeRes.json();
+    try {
+      const statusRes = await fetch(
+        `https://api.apify.com/v2/actor-runs/${runId}?token=${apifyToken}`
+      );
+      const statusData = await statusRes.json();
+      const status = statusData?.data?.status;
 
-    if (completeData.status === 'SUCCEEDED') {
-      clearInterval(poll);
-      showToast(`✅ ${completeData.stored} ads saved! Loading feed…`);
-      if (currentBrandId === brandId) loadAds(brandId);
+      if (status === 'SUCCEEDED') {
+        clearInterval(poll);
+        showToast('✅ Ads found! Saving to your dashboard…');
+
+        // Step 3: send results to server to store in Supabase
+        const completeRes = await fetch('/api/ads/scrape/complete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subscriber_id: subscriber.id,
+            brand_id: brandId,
+            run_id: runId,
+            dataset_id: datasetId
+          })
+        });
+        const completeData = await completeRes.json();
+        showToast(`🌸 ${completeData.stored || 0} ads loaded!`);
+        if (currentBrandId === brandId) loadAds(brandId);
+
+      } else if (status === 'FAILED' || status === 'ABORTED' || status === 'TIMED-OUT') {
+        clearInterval(poll);
+        showToast('Scrape failed — please try again.', 'error');
+      }
+    } catch (err) {
+      // network blip — keep polling
     }
-  }, 15000);
+  }, 10000);
 }
 
 /* ─── Ads ────────────────────────────────────────────────────── */

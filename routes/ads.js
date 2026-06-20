@@ -62,7 +62,14 @@ router.post('/scrape', async (req, res) => {
     .update({ last_scrape_run_id: runId, last_scrape_dataset_id: datasetId })
     .eq('id', brand_id);
 
-  res.json({ message: 'Scrape started', runId, datasetId, brand: brand.brand_name });
+  // Return apifyToken so browser can poll Apify directly (avoids Render spindown)
+  res.json({
+    message: 'Scrape started',
+    runId,
+    datasetId,
+    apifyToken: process.env.APIFY_API_TOKEN,
+    brand: brand.brand_name
+  });
 });
 
 // Step 2: Poll run status and store results when done
