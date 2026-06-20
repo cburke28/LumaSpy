@@ -46,12 +46,18 @@ async function fetchResults(runId, datasetId) {
 
 function normalizeAds(rawItems) {
   const ads = [];
+  const seenIds = new Set();
+
   for (const item of rawItems) {
     const creatives = item.creatives?.length ? item.creatives : [{}];
     for (const creative of creatives) {
+      const ad_id = `${item.adArchiveId}_${creative.cardIndex ?? 0}`;
+      if (seenIds.has(ad_id)) continue;
+      seenIds.add(ad_id);
+
       ads.push({
-        ad_id: `${item.adArchiveId}_${creative.cardIndex ?? 0}`,
-        ad_text: creative.body || creative.description || '',
+        ad_id,
+        ad_text: creative.body || creative.title || creative.description || creative.caption || '',
         image_url: creative.imageUrls?.[0] || null,
         video_url: creative.videoUrl || null,
         cta: creative.ctaText || null,
@@ -64,14 +70,9 @@ function normalizeAds(rawItems) {
       });
     }
   }
-  // Deduplicate by ad text
-  const seen = new Set();
-  return ads.filter(ad => {
-    const key = ad.ad_text?.trim().slice(0, 100);
-    if (!key || seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+
+  console.log(`[Apify] Normalized ${ads.length} ads from ${rawItems.length} raw items`);
+  return ads;
 }
 
 function calcDaysRunning(startDate) {
