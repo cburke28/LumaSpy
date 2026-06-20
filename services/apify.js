@@ -10,7 +10,12 @@ async function startScrape(searchQuery, maxAds = 30) {
   console.log(`[Apify] Starting scrape for: "${searchQuery}"`);
   const runRes = await axios.post(
     `${APIFY_BASE}/acts/${ACTOR_ID}/runs?token=${TOKEN}`,
-    { searchQuery, country: 'US', maxResults: maxAds }
+    {
+      searchTerms: [searchQuery],
+      countries: ['US'],
+      maxAds,
+      adActiveStatus: 'ALL'
+    }
   );
   const runId = runRes.data.data.id;
   const datasetId = runRes.data.data.defaultDatasetId;
