@@ -80,6 +80,14 @@ app.post('/api/admin/send-digests', async (req, res) => {
 // Health check
 app.get('/api/health', (_, res) => res.json({ status: 'ok', ts: new Date().toISOString() }));
 
+// Keepalive — ping self every 10 minutes to prevent Render free tier spindown
+if (process.env.APP_URL && process.env.NODE_ENV === 'production') {
+  const axios = require('axios');
+  setInterval(() => {
+    axios.get(`${process.env.APP_URL}/api/health`).catch(() => {});
+  }, 10 * 60 * 1000);
+}
+
 // SPA fallback — serve dashboard for direct nav
 app.get('/dashboard', (_, res) => res.sendFile(path.join(__dirname, 'public', 'dashboard.html')));
 
