@@ -72,6 +72,60 @@ router.post('/scrape', async (req, res) => {
   });
 });
 
+// Debug: save from an existing completed dataset (no new scrape)
+router.post('/scrape/debug', async (req, res) => {
+  const { subscriber_id, brand_id, dataset_id } = req.body;
+  if (!subscriber_id || !brand_id || !dataset_id) {
+    return res.status(400).json({ error: 'subscriber_id, brand_id, dataset_id required' });
+  }
+
+  const { data: brand } = await supabase
+    .from('tracked_brands').select('*')
+    .eq('id', brand_id).eq('subscriber_id', subscriber_id).single();
+  if (!brand) return res.status(404).json({ error: 'Brand not found' });
+
+  const axios = require('axios');
+  const TOKEN = process.env.APIFY_API_TOKEN;
+  const itemsRes = await axios.get(
+    `https://api.apify.com/v2/datasets/${dataset_id}/items?token=${TOKEN}&format=json&limit=50`
+  );
+  const rawItems = itemsRes.data || [];
+  console.log(`[Debug] Fetched ${rawItems.length} raw items from dataset ${dataset_id}`);
+  console.log(`[Debug] Sample item keys:`, rawItems[0] ? Object.keys(rawItems[0]) : 'none');
+  if (rawItems[0]?.creatives) console.log(`[Debug] Sample creative keys:`, Object.keys(rawItems[0].creatives[0] || {}));
+
+  const { fetchResults } = require('../services/apify');
+  // manually normalize so we can see counts
+  let inserted = 0, errors = 0;
+  for (const item of rawItems) {
+    const creatives = item.creatives?.length ? item.creatives : [{}];
+    for (const creative of creatives) {
+      const ad_id = `${item.adArchiveId}_${creative.cardIndex ?? 0}`;
+      const { data: existing } = await supabase.from('ads').select('id').eq('ad_id', ad_id).eq('brand_id', brand.id).single();
+      if (existing) continue;
+      const { error } = await supabase.from('ads').insert({
+        ad_id,
+        ad_text: creative.body || creative.title || creative.description || creative.caption || '',
+        image_url: creative.imageUrls?.[0] || null,
+        video_url: creative.videoUrl || null,
+        cta: creative.ctaText || null,
+        link: creative.destinationUrl || item.snapshotUrl || null,
+        days_running: item.daysRunning || 0,
+        platform: (item.publisherPlatforms || ['facebook']).join(', '),
+        first_seen: item.adDeliveryStartTime || new Date().toISOString(),
+        last_seen: new Date().toISOString(),
+        still_active: item.adActiveStatus === 'ACTIVE',
+        brand_id: brand.id,
+        subscriber_id
+      });
+      if (error) { console.error('[Debug] Insert error:', error.message); errors++; }
+      else inserted++;
+    }
+  }
+
+  res.json({ raw_items: rawItems.length, inserted, errors, sample_keys: rawItems[0] ? Object.keys(rawItems[0]) : [] });
+});
+
 // Step 2: Poll run status and store results when done
 router.post('/scrape/complete', async (req, res) => {
   const { subscriber_id, brand_id, run_id, dataset_id } = req.body;
