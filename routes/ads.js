@@ -74,15 +74,28 @@ router.post('/scrape', async (req, res) => {
 
 // Debug: save from an existing completed dataset (no new scrape)
 router.post('/scrape/debug', async (req, res) => {
-  const { subscriber_id, brand_id, dataset_id } = req.body;
-  if (!subscriber_id || !brand_id || !dataset_id) {
-    return res.status(400).json({ error: 'subscriber_id, brand_id, dataset_id required' });
-  }
+  const { subscriber_id, brand_id, email, brand_name, dataset_id } = req.body;
+  if (!dataset_id) return res.status(400).json({ error: 'dataset_id required' });
 
-  const { data: brand } = await supabase
-    .from('tracked_brands').select('*')
-    .eq('id', brand_id).eq('subscriber_id', subscriber_id).single();
-  if (!brand) return res.status(404).json({ error: 'Brand not found' });
+  let brand, resolvedSubscriberId;
+
+  if (email && brand_name) {
+    const { data: sub } = await supabase.from('subscribers').select('id').eq('email', email).single();
+    if (!sub) return res.status(404).json({ error: 'Subscriber not found for email: ' + email });
+    resolvedSubscriberId = sub.id;
+    const { data: b } = await supabase.from('tracked_brands').select('*')
+      .eq('subscriber_id', sub.id).ilike('brand_name', brand_name).single();
+    if (!b) return res.status(404).json({ error: 'Brand not found: ' + brand_name });
+    brand = b;
+  } else if (subscriber_id && brand_id) {
+    resolvedSubscriberId = subscriber_id;
+    const { data: b } = await supabase.from('tracked_brands').select('*')
+      .eq('id', brand_id).eq('subscriber_id', subscriber_id).single();
+    if (!b) return res.status(404).json({ error: 'Brand not found' });
+    brand = b;
+  } else {
+    return res.status(400).json({ error: 'Provide either (email + brand_name) or (subscriber_id + brand_id)' });
+  }
 
   const axios = require('axios');
   const TOKEN = process.env.APIFY_API_TOKEN;
@@ -116,7 +129,7 @@ router.post('/scrape/debug', async (req, res) => {
         last_seen: new Date().toISOString(),
         still_active: item.adActiveStatus === 'ACTIVE',
         brand_id: brand.id,
-        subscriber_id
+        subscriber_id: resolvedSubscriberId
       });
       if (error) { console.error('[Debug] Insert error:', error.message); errors++; }
       else inserted++;
