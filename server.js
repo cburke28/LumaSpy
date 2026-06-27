@@ -25,6 +25,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, standardHeaders: true, validate: { xForwardedForHeader: false } });
 app.use('/api', apiLimiter);
 
+// Version check
+app.get('/api/version', (req, res) => res.json({ version: '2026-06-27-v2', searchField: 'searchTerms' }));
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/brands', brandsRoutes);
