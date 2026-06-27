@@ -2,6 +2,7 @@ services:
   - type: web
     name: lumaspy
     runtime: node
+    rootDir: lumaspy
     buildCommand: npm install
     startCommand: node server.js
     envVars:
