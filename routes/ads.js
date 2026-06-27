@@ -24,9 +24,7 @@ router.get('/', async (req, res) => {
   if (brand_id) query = query.eq('brand_id', brand_id);
 
   if (sub?.plan === 'free') {
-    query = query
-      .gte('first_seen', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
-      .limit(5);
+    query = query.limit(10);
   } else {
     query = query.limit(Number(limit));
   }
